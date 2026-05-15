@@ -1,5 +1,5 @@
 pipeline{
-    agent any
+    agent {label 'frontend'}
     stages{
         stage('Pre Build Actions'){
             steps{
