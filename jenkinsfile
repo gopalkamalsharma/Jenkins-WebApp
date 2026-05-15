@@ -15,7 +15,6 @@ pipeline{
             steps{
                 sh 'echo "Build Completed Successfully"'
                 sh 'cp -r dist/* /var/www/html/'
-                sh 'sudo systemctl restart nginx'
             }
         }
     }
