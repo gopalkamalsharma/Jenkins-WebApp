@@ -4,8 +4,6 @@ pipeline{
         stage('Pre Build Actions'){
             steps{
                 sh 'npm install'
-                sh 'sudo systemctl status nginx || sudo apt install nginx -y'
-                sh 'sudo systemctl start nginx'
             }
         }
         stage('Build'){
