@@ -18,10 +18,6 @@ pipeline{
             }
         }
         stage('Post Build Actions'){
-            when {
-                branch 'main'
-            }
-
             steps {
 
                 sh """
