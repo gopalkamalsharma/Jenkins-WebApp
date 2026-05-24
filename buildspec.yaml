@@ -19,10 +19,10 @@ phases:
       - cp -r dist deploy/dist
       - cp appspec.yaml deploy/
       - cp -r scripts deploy/
-      - chmod =x deploy/scripts/restartNginx.sh
+      - chmod +x deploy/scripts/restartNginx.sh
 
 artifacts:
   files:
     - '**/*'
-  base-directory: dist
+  base-directory: deploy
   name: frontend-build
