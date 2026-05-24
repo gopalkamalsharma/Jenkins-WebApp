@@ -15,6 +15,10 @@ phases:
   post_build:
     commands:
       - echo Build completed on `date`
+      - mkdir deploy
+      - cp -r dist deploy/dist
+      - cp appspec.yml deploy/
+      - cp -r scripts deploy/
 
 artifacts:
   files:
