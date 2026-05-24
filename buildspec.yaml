@@ -17,8 +17,9 @@ phases:
       - echo Build completed on `date`
       - mkdir deploy
       - cp -r dist deploy/dist
-      - cp appspec.yml deploy/
+      - cp appspec.yaml deploy/
       - cp -r scripts deploy/
+      - chmod =x deploy/scripts/restartNginx.sh
 
 artifacts:
   files:
