@@ -19,5 +19,5 @@ phases:
 artifacts:
   files:
     - '**/*'
-  base-directory: build
-  name: frontend-build-$(date +%Y-%m-%d-%H-%M-%S)
+  base-directory: dist
+  name: frontend-build
