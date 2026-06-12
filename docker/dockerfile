@@ -1,8 +1,8 @@
 FROM node:24 AS builder
 WORKDIR /app
+RUN cd ..
 COPY ../package*.json ./
 RUN npm install
-RUN cd ..
 COPY . .
 RUN npm run build
 
