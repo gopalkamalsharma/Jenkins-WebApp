@@ -3,7 +3,7 @@ pipeline {
     environment {
         IMAGE_NAME = "gopalsharma2504/frontend"
         IMAGE_TAG  = "${BUILD_NUMBER}"
-        APP_SERVER = "172.31.14.213"
+        APP_SERVER = "43.204.111.98"
     }
     stages {
         stage('Checkout') {
