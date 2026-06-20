@@ -3,11 +3,13 @@ pipeline{
     stages{
         stage('Deployment'){
             steps{
-                sh 'ssh ubuntu@3.7.65.6'
                 sh '''
-                sudo cp docker-compose.yaml /home/ubuntu/docker-compose.yaml
+                scp docker-compose.yaml ubuntu@3.7.65.6:/home/ubuntu/
+                ssh ubuntu@3.7.65.6 << 'EOF'
+                cd /home/ubuntu
                 docker-compose down
                 docker-compose up -d
+                EOF
                 '''
             }
         }
