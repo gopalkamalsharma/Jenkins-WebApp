@@ -5,7 +5,7 @@ pipeline{
             steps{
                 sh 'ssh ubuntu@3.7.65.6'
                 sh '''
-                copy docker-compose.yaml /home/ubuntu/docker-compose.yaml
+                cp docker-compose.yaml /home/ubuntu/docker-compose.yaml
                 docker-compose down
                 docker-compose up -d
                 '''
