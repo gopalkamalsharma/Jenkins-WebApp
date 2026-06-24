@@ -1,0 +1,30 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: ecommerce
+      MYSQL_USER: gopal
+      MYSQL_PASSWORD: gopal123
+    volumes:
+      - mysql-data:/var/lib/mysql
+  backend:
+    image: gopalsharma2504/backend:v1
+    container_name: backend
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - "8080:8080"
+  frontend:
+    image: gopalsharma2504/frontend:v1
+    container_name: frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+volumes:
+  mysql-data:

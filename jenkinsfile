@@ -1,39 +1,15 @@
 pipeline{
-    agent {label 'Frontend'}
-    environment {
-
-        APP_SERVER = "172.31.37.135"
-        DEPLOY_DIR = "/var/www/html"
-    }
+    agent any
     stages{
-        
-        stage('Pre Build Actions'){
+        stage('Deployment'){
             steps{
-                sh 'npm install'
-            }
-        }
-        stage('Build'){
-            steps{
-                sh 'npm run build'
-            }
-        }
-        stage('Post Build Actions'){
-            steps {
-
                 sh """
-
-                echo 'Cleaning old files on app server'
-
-                ssh jenkins@${APP_SERVER} 'rm -rf ${DEPLOY_DIR}/*'
-
-                echo 'Copying frontend build'
-
-                scp -r dist/* jenkins@${APP_SERVER}:${DEPLOY_DIR}/
-
-                echo 'Restarting nginx'
-
-                ssh jenkins@${APP_SERVER} 'sudo systemctl restart nginx'
-
+                scp docker-compose.yaml ubuntu@3.7.65.6:/home/ubuntu/
+                ssh ubuntu@3.7.65.6 '''
+                cd /home/ubuntu
+                docker-compose down
+                docker-compose up -d
+                '''
                 """
             }
         }
