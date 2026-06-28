@@ -5,7 +5,7 @@ pipeline{
         ACCOUNT_ID = '239857123300'
         REPOSITORY = 'frontend'
         IMAGE_TAG = '${BUILD_NUMBER}'
-        ECR_URI = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPOSITORY}:${IMAGE_TAG}"
+        ECR_URI = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPOSITORY}"
         ACCESS_KEY_ID = credentials('ACCESS_KEY_ID')
         SECRET_ACCESS_KEY = credentials('SECRET_ACCESS_KEY')
         CLUSTER_NAME = 'default'
@@ -56,7 +56,9 @@ pipeline{
             steps{
                 sh """
                 docker tag ${REPOSITORY}:${IMAGE_TAG} ${ECR_URI}
+                docker tag ${REPOSITORY}:${IMAGE_TAG} ${ECR_URI}:latest
                 docker push ${ECR_URI}
+                docker push ${ECR_URI}:latest
                 """
             }
         }
