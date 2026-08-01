@@ -6,10 +6,10 @@ pipeline{
         REPOSITORY = 'frontend'
         IMAGE_TAG = '${BUILD_NUMBER}'
         ECR_URI = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPOSITORY}"
-        ACCESS_KEY_ID = credentials('ACCESS_KEY_ID')
-        SECRET_ACCESS_KEY = credentials('SECRET_ACCESS_KEY')
-        CLUSTER_NAME = 'default'
-        SERVICE_NAME = 'frontend-9435'
+        EKS_CLUSTER = 'demo-cluster'
+        SERVICE_NAME = 'frontend'
+        K8S_NAMESPACE = 'development'
+        IMAGE_URI
     }
     stages{
         stage('Checkout'){
@@ -17,6 +17,7 @@ pipeline{
                 checkout scm
             }
         }
+        
         stage('Build Docker Image'){
             steps{
                 sh """
@@ -26,10 +27,6 @@ pipeline{
         }
         stage('Login to AWS ECR'){
             steps {
-                withCredentials([
-                    string(credentialsId: 'ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
                     sh """
                         export AWS_DEFAULT_REGION=${AWS_REGION}
 
@@ -43,15 +40,7 @@ pipeline{
                 }
             }
         }
-        stage ('Login to AWS CLI'){
-            steps{
-                sh """
-                aws configure set aws_access_key_id ${ACCESS_KEY_ID}
-                aws configure set aws_secret_access_key ${SECRET_ACCESS_KEY}
-                aws configure set default.region ${AWS_REGION}
-                """
-            }
-        }
+        
         stage('Tag and Push Docker Image to ECR'){
             steps{
                 sh """
@@ -62,13 +51,29 @@ pipeline{
                 """
             }
         }
-        stage('Deploy to ECS Service'){
+        stage('Configure kubectl'){
             steps{
                 sh """
-                aws ecs update-service \
-                --cluster ${CLUSTER_NAME} \
-                --service ${SERVICE_NAME} \
-                --force-new-deployment
+                aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}
+                kubectl config set-context --current --namespace=${K8S_NAMESPACE}
+                """
+            }
+        }
+        stage('Deploy to EKS Service'){
+            steps{
+                sh """
+                kubectl set image deployment/${SERVICE_NAME} ${SERVICE_NAME}=${ECR_URI}:${IMAGE_TAG} --record
+                kubectl rollout status deployment/${SERVICE_NAME} -n ${K8S_NAMESPACE} --timeout=300s;
+                """
+            }
+        }
+        stage('Verify Deployment'){
+            steps{
+                sh """
+                kubectl get pods -n ${K8S_NAMESPACE}
+                kubectl get svc -n ${K8S_NAMESPACE}
+                kubectl get ingress -n ${K8S_NAMESPACE}
+                kubectl get deployment -n ${K8S_NAMESPACE}
                 """
             }
         }
@@ -82,6 +87,11 @@ pipeline{
         failure{
             echo "Deployment Failed!"
             cleanWs()
+            sh '''
+            docker image prune -f
+            kubectl rollout undo deployment/${SERVICE_NAME} -n ${K8S_NAMESPACE}
+            '''
+            echo "Rolled back to previous deployment"
         }
     }
 }
