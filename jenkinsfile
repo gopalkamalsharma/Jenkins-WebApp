@@ -1,17 +1,104 @@
 pipeline{
     agent any
+    environment{
+        AWS_REGION = 'ap-south-1'
+        ACCOUNT_ID = '239857123300'
+        REPOSITORY = 'frontend'
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        ECR_URI = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPOSITORY}"
+        EKS_CLUSTER = 'demo-cluster'
+        SERVICE_NAME = 'frontend'
+        K8S_NAMESPACE = 'development'
+    }
     stages{
-        stage('Deployment'){
+        stage('Checkout'){
+            steps{
+                checkout scm
+            }
+        }
+        
+        stage('Build Docker Image'){
             steps{
                 sh """
-                scp docker-compose.yaml ubuntu@3.7.65.6:/home/ubuntu/
-                ssh ubuntu@3.7.65.6 '''
-                cd /home/ubuntu
-                docker-compose down
-                docker-compose up -d
-                '''
+                docker build  -f docker/dockerfile -t ${REPOSITORY}:${IMAGE_TAG} .
                 """
             }
+        }
+        stage('Login to AWS ECR'){
+            steps {
+                    sh """
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                        docker login \
+                        --username AWS \
+                        --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                    """
+                }
+            }
+        
+        stage('Tag and Push Docker Image to ECR'){
+            steps{
+                sh """
+                docker tag ${REPOSITORY}:${IMAGE_TAG} ${ECR_URI}:${IMAGE_TAG}
+                docker tag ${REPOSITORY}:${IMAGE_TAG} ${ECR_URI}:latest
+                docker push ${ECR_URI}:${IMAGE_TAG}
+                docker push ${ECR_URI}:latest
+                """
+            }
+        }
+        stage('Configure kubectl'){
+            steps{
+                sh """
+                aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}
+                kubectl config set-context --current --namespace=${K8S_NAMESPACE}
+                """
+            }
+        }
+        stage('Deploy to EKS Service'){
+            steps{
+                sh """
+                kubectl set image deployment/frontend frontend=image
+                kubectl rollout status deployment/${SERVICE_NAME} -n ${K8S_NAMESPACE} --timeout=300s;
+                """
+            }
+        }
+        stage('Verify Deployment'){
+            steps{
+                sh """
+                kubectl get pods -n ${K8S_NAMESPACE}
+                kubectl get svc -n ${K8S_NAMESPACE}
+                kubectl get ingress -n ${K8S_NAMESPACE}
+                kubectl get replicaset -n ${K8S_NAMESPACE}
+                kubectl get endpoints -n ${K8S_NAMESPACE}
+                kubectl get deployment -n ${K8S_NAMESPACE}
+                """
+            }
+        }
+    }
+    post{
+        always {
+
+            sh '''
+                docker image prune -af || true
+            '''
+
+            cleanWs()
+
+        }
+        success {
+
+            echo "Deployment Successful"
+
+        }
+        failure {
+
+            echo "Deployment Failed"
+
+            sh """
+                kubectl rollout undo deployment/${SERVICE_NAME} -n ${K8S_NAMESPACE} || true
+
+                docker image prune -af || true
+            """
+
         }
     }
 }
