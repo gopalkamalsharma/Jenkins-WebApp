@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+terraform/terraform.tfvars
+terraform/.terraform
+terraform/.terraform.tfstate
+terraform/.terraform.tfstate.backup
